@@ -1,0 +1,81 @@
+# Makefile for lacheck using EMX/gcc 0.8g or MSC 6.00A with dmake.  8 Aug 93
+
+default:
+	@echo Enter "$(MAKE) -f makefile.os2 emx"
+	@echo    or "$(MAKE) -f makefile.os2 msc"
+	@echo    or "$(MAKE) -f makefile.os2 mscbnd"
+
+emx:
+	$(MAKE) -f makefile.os2 all \
+	CC="gcc -Zomf -Zmtd" O=".obj" \
+	CFLAGS="-O -DOS2" \
+	LFLAGS="" \
+	LIBS="lacheck-32.def"
+
+emx-debug:
+	$(MAKE) -f makefile.os2 all \
+	CC="gcc -g" O=".o" \
+	CFLAGS="-DOS2" \
+	LFLAGS="" \
+	LIBS="lacheck-32.def"
+
+msc:
+	$(MAKE) -f makefile.os2 all \
+	CC="cl -nologo -AC" O=".obj" \
+	CFLAGS="-D__STDC__ -DOS2" \
+	LFLAGS="-Lp" \
+	LIBS="lacheck.def"
+
+mscbnd:
+	$(MAKE) -f makefile.os2 all \
+	CC="cl -nologo -AC" O=".obj" \
+	CFLAGS="-D__STDC__ -DOS2" \
+	LFLAGS="-Lp -Fb" \
+	LIBS="lacheck.def"
+
+SHELL = sh
+#prefix = /usr/local
+
+bindir = $(prefix)/bin
+mandir = $(prefix)/man/man1
+
+INSTALL = install -c
+INSTALL_PROGRAM = $(INSTALL)
+INSTALL_DATA = $(INSTALL) -m 0444
+
+# Remember to change when lacheck is updated.
+REV = 1.8
+
+# 
+FTPDIR = /pack/ftp/pub/TeX/LaTeX
+
+# Use `cc -bsd' on a next
+#CC = gcc -traditional
+
+#
+#CFLAGS = -O # -DNEED_STRSTR 
+LEX = flex -8 lacheck.lex
+
+.c$O:
+	$(CC) -c $(CFLAGS) $<
+
+all : lacheck.exe
+
+lacheck.exe : lacheck$O
+	$(CC) $(LFLAGS) -o $@ $< $(LIBS)
+
+lacheck.c:	lacheck.lex  
+	$(LEX) 
+	mv lexyy.c $@
+
+lacheck.1: 	lacheck.man  
+	sed -e "s!%%LACHECKREV%%!Release $(REV)!" lacheck.man |\
+	sed -e "s!%%LACHECKDATE%%!`date +%D`!" |\
+	sed -e "s!%%LACHECKPATH%%!$(bindir)/lacheck!" > lacheck.1
+
+install: 	lacheck.exe lacheck.1
+	$(INSTALL_PROGRAM) lacheck.exe $(bindir)
+	$(INSTALL_DATA) lacheck.1 $(mandir)
+
+clean:
+	rm -f lacheck.exe lacheck.c *.o *.obj *.1
